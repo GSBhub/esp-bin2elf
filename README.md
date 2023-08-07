@@ -35,3 +35,15 @@ Feel free to report an issue on github or contact me privately if you prefer.
 * Richard Burton for image format details: http://richard.burtons.org/2015/05/17/esp8266-boot-process/
 * Max Filippov (**jcmvbkbc**) for bootrom.bin: https://github.com/jcmvbkbc/esp-elf-rom
 * Fredrik Ahlberg (**themadinventor**) for the IDA plugin and esptool.
+
+
+## Additional notes:
+The `elffile` module is super, super out of date, there's a slightly less out of date version called `elffile2`, found here:
+ which can be pulled from 
+
+`elffile` needs the "coding" module, which also needs to be manually pulled to bulid. 
+
+FTODO: add these as a submodule/subtree and just bulid a normal installer script.
+
+Additional issues: Binary isn't being fuly read. 
+FT
