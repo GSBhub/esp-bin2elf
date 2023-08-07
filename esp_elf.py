@@ -1,7 +1,6 @@
 # esp-bin2elf written by Joel Sandin <jsandin@gmail.com>
 #
 # MIT licence
-
 from elffile import ElfFileIdent, ElfFileHeader32l, ElfFile32l, ElfSectionHeader32l, ElfProgramHeader32l
 from esp_elf_pack import pack_elf, pack_symbol
 from esp_memory_map import is_code, is_data
@@ -44,7 +43,7 @@ class XtensaElf(object):
         self.add_section(self.string_table)
         self.add_section(self.symbol_table)
 
-        string_table_offset = self.get_index_for_section('.shstrtab')
+        string_table_offset = self.get_index_for_section(b'.shstrtab')
         self.symbol_table.set_link(string_table_offset)
         self.elf.fileHeader.shstrndx = string_table_offset
 
@@ -94,7 +93,7 @@ class XtensaElf(object):
         self.elf.fileHeader.phoff = offset
 
     def write_to_file(self, filename_to_write):
-        with open(filename_to_write, 'w') as f:
+        with open(filename_to_write, 'wb') as f:
             f.write(pack_elf(self.elf))
 
 
@@ -118,7 +117,7 @@ class ElfSection(object):
         elif is_data(section_address):
             settings_to_use = dataSettings
         else:
-            raise Exception("can't find settings for %x" % (section_adddress))
+            raise Exception("can't find settings for %x: (%s)" % (section_address, section_name))
 
         header.type = settings_to_use.type
         header.addralign = settings_to_use.addralign
@@ -153,19 +152,21 @@ class ElfSection(object):
 
 class NullSection(ElfSection):
     def __init__(self):
-        super(NullSection, self).__init__('', 0x0, '')
+        super(NullSection, self).__init__(b'', 0x0, b'')
 
 
 class ElfStringTable(ElfSection):
     def __init__(self):
-        self.string_to_offset = {'': 0}
+        self.string_to_offset = {b'': 0}
 
-        super(ElfStringTable, self).__init__('.shstrtab', 0x0, '\x00')
+        super(ElfStringTable, self).__init__(b'.shstrtab', 0x0, b'\x00')
 
     def add_string(self, string):
+        if type(string) is not bytes:
+            print(string)
         if string not in self.string_to_offset:
             self.string_to_offset[string] = len(self.header.content)
-            self.append_to_content(string + '\x00')
+            self.append_to_content(string + b'\x00')
 
         return self.get_index(string)
 
@@ -175,9 +176,9 @@ class ElfStringTable(ElfSection):
 
 class ElfSymbolTable(ElfSection):
     def __init__(self):
-        super(ElfSymbolTable, self).__init__('.symtab', 0x0, '')
+        super(ElfSymbolTable, self).__init__(b'.symtab', 0x0, b'')
 
-        self.append_to_content('\x00' * 16)   # first entry is null symbol
+        self.append_to_content(b'\x00' * 16)   # first entry is null symbol
         self.header.entsize = 16              # sizeof(Elf32_sym)
         self.symbols = []
 
@@ -226,13 +227,13 @@ codeSettings = SectionSettings(type=SHT_PROGBITS, addralign=1, flags=0x6)
 dataSettings = SectionSettings(type=SHT_PROGBITS, addralign=1, flags=0x3)
 
 default_section_settings = {
-  '':              SectionSettings(type=SHT_NULL,     addralign=1, flags=0x0),
-  '.data':         SectionSettings(type=SHT_PROGBITS, addralign=1, flags=0x3),
-  '.rodata':       SectionSettings(type=SHT_PROGBITS, addralign=1, flags=0x2),
-  '.bss':          SectionSettings(type=SHT_NOBITS,   addralign=1, flags=0x3),
-  '.text':         SectionSettings(type=SHT_PROGBITS, addralign=1, flags=0x6),
-  '.irom0.text':   SectionSettings(type=SHT_PROGBITS, addralign=1, flags=0x6),
-  '.bootrom.text': SectionSettings(type=SHT_PROGBITS, addralign=1, flags=0x6),
-  '.shstrtab':     SectionSettings(type=SHT_STRTAB,   addralign=1, flags=0x0),
-  '.symtab':       SectionSettings(type=SHT_SYMTAB,   addralign=1, flags=0x0)
+  b'':              SectionSettings(type=SHT_NULL,     addralign=1, flags=0x0),
+  b'.data':         SectionSettings(type=SHT_PROGBITS, addralign=1, flags=0x3),
+  b'.rodata':       SectionSettings(type=SHT_PROGBITS, addralign=1, flags=0x2),
+  b'.bss':          SectionSettings(type=SHT_NOBITS,   addralign=1, flags=0x3),
+  b'.text':         SectionSettings(type=SHT_PROGBITS, addralign=1, flags=0x6),
+  b'.irom0.text':   SectionSettings(type=SHT_PROGBITS, addralign=1, flags=0x6),
+  b'.bootrom.text': SectionSettings(type=SHT_PROGBITS, addralign=1, flags=0x6),
+  b'.shstrtab':     SectionSettings(type=SHT_STRTAB,   addralign=1, flags=0x0),
+  b'.symtab':       SectionSettings(type=SHT_SYMTAB,   addralign=1, flags=0x0)
 }

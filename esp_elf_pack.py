@@ -105,13 +105,13 @@ def pack_symbol(symbol):
     return _pack_struct(symbol, Elf32_Sym)
 
 def pack_ident(ident):
-    header = '\x7fELF'                     # magic number
+    header = b'\x7fELF'                     # magic number
     header += _pack_struct(ident, e_ident) # pack fields in e_ident
-    return header + '\x00' * 9             # pad to 16 bytes
+    return header + b'\x00' * 9             # pad to 16 bytes
 
 
 def _pack_struct(struct, struct_fields):
-    packed = ''
+    packed = b''
 
     for (field, size) in struct_fields:
         field_value = getattr(struct, field)

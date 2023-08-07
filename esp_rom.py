@@ -4,7 +4,7 @@
 
 from esp_memory_map import find_region_for_address
 
-from StringIO import StringIO
+from io import BytesIO as StringIO # lol
 from struct import pack, unpack
 
 class EspRom(object):
@@ -54,9 +54,9 @@ class EspRomHeader(object):
         header_type = rom_bytes_stream.read(1)
         rom_bytes_stream.seek(-1, 1) # relative position
 
-        if header_type == '\xe9':
+        if header_type == b'\xe9':
             return EspRomE9Header(rom_bytes_stream)
-        elif header_type == '\xe4':
+        elif header_type == b'\xe4':
             return EspRomE4Header(rom_bytes_stream)
         else:
             raise RomParseException(
@@ -79,23 +79,25 @@ class EspRomE9Header(EspRomHeader):
         #     uint32 entry_addr;
         # } rom_header;
 
-        rom_header_bytes = rom_bytes_stream.read(EspRomE9Header.ROM_HEADER_SIZE)
+        rom_header_bytes = bytearray(rom_bytes_stream.read(EspRomE9Header.ROM_HEADER_SIZE))
 
         if len(rom_header_bytes) != EspRomE9Header.ROM_HEADER_SIZE:
             raise RomParseException(
                 "EspRomE9Header.init(): len(rom_header_bytes) is %d bytes != 8 bytes."
                     % (len(rom_header_bytes)))
 
-        if rom_header_bytes[0] != '\xe9':
+        if rom_header_bytes[0] != ord(b'\xe9'):
             raise RomParseException(
                 "EspRomE9Header.init(): magic_number is %s != 0xe9."
                     % (rom_header_bytes[0]))
 
-        self.magic = unpack('<B', rom_header_bytes[0])[0]
-        self.sect_count = unpack('<B', rom_header_bytes[1])[0]
-        self.flags1 = unpack('<B', rom_header_bytes[2])[0]
-        self.flags2 = unpack('<B', rom_header_bytes[3])[0]
-        self.entry_addr = unpack('<I', rom_header_bytes[4:8])[0]
+        self.magic, self.sect_count, self.flags1, self.flags2, self.entry_addr = unpack('<BBBBI', rom_header_bytes)
+
+        #self.magic = unpack('<B', rom_header_bytes[0])[0]
+        #self.sect_count = unpack('<B', rom_header_bytes[1])[0]
+        #self.flags1 = unpack('<B', rom_header_bytes[2])[0]
+        #self.flags2 = unpack('<B', rom_header_bytes[3])[0]
+        #self.entry_addr = unpack('<I', rom_header_bytes[4:8])[0]
 
         super(EspRomE9Header, self).__init__()
 
